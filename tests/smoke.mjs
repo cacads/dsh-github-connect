@@ -114,6 +114,25 @@ async function call(method, path, opts = {}) {
 const initiallyConnected = (await call('GET', '/dsh-github/status')).json.connected === true
 
 {
+  // The verify route re-validates the stored token against GitHub. It is
+  // read-only for the connection itself (only refreshes lastVerifiedAt on
+  // success, clears only on a definitive 401).
+  const { status, json } = await call('POST', '/dsh-github/verify', {
+    body: JSON.stringify({}),
+  })
+  assert.equal(status, 200)
+  assert.equal(typeof json.connected, 'boolean')
+  if (json.connected === true) {
+    assert.equal(json.verified, true)
+    assert.equal(typeof json.lastVerifiedAt, 'string')
+    console.log('PASS  POST /dsh-github/verify -> re-validated, lastVerifiedAt=' + json.lastVerifiedAt)
+  } else {
+    assert.equal(typeof json.lastVerifiedAt, 'string')
+    console.log('PASS  POST /dsh-github/verify -> not connected (lastVerifiedAt=' + json.lastVerifiedAt + ')')
+  }
+}
+
+{
   const { status, json } = await call('GET', '/dsh-github/does-not-exist')
   assert.equal(status, 404)
   console.log('PASS  unknown route -> 404')
