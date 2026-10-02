@@ -7,7 +7,7 @@
  * portable network layer (proxy resolution / NO_PROXY / CA / dispatcher).
  */
 import assert from 'node:assert/strict'
-import { apply, isAllowedApiPath, name, parseScopeHeader } from '../lib/index.js'
+import { apply, isAllowedApiPath, name, parseScopeHeader, renderApiResult } from '../lib/index.js'
 import {
   bypassesProxy,
   dispatcherFor,
@@ -82,6 +82,23 @@ console.log('PASS  agent plane: github_api tool + prompt section registered')
   assert.equal(parseScopeHeader(null), null)
   assert.equal(parseScopeHeader(undefined), null)
   console.log('PASS  scope header parsing: known / empty / unknown')
+}
+
+{
+  // The quota snapshot belongs to the model-facing text on failures only —
+  // GitHub's rate-limit body does not say how much is left.
+  const okText = renderApiResult(
+    { method: 'GET', path: '/user' },
+    { ok: true, status: 200, body: '{}', rateLimit: 'limit=5000 remaining=4999 reset=2026-10-03T00:00:00.000Z' })
+  assert.ok(okText.includes('HTTP 200') && okText.includes('{}'), 'success text keeps headline + body')
+  assert.ok(!okText.includes('remaining='), 'success text carries no quota noise')
+  const failText = renderApiResult(
+    { method: 'GET', path: '/x' },
+    { ok: false, status: 403, body: 'API rate limit exceeded', rateLimit: 'limit=5000 remaining=0 reset=2026-10-03T00:00:00.000Z retry-after=60s' })
+  assert.ok(failText.includes('remaining=0'), 'failure text carries the remaining quota')
+  assert.ok(failText.includes('reset=2026-10-03T00:00:00.000Z'), 'failure text carries the reset time')
+  assert.ok(failText.includes('retry-after=60s'), 'failure text carries retry-after when present')
+  console.log('PASS  renderApiResult: quota snapshot on failures only')
 }
 
 class FakeResponse {
