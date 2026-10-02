@@ -161,6 +161,9 @@ dsh_my_plugin/
 
 ## 变更记录（fork 分支 `fix-ov23-client-id`）
 
+- **0.1.2**：`github_api` **失败返回**追加配额快照（`limit` / `remaining` / `reset=<UTC>` /
+  `retry-after=<秒>`）——限流 403 时模型能直接看到还剩多少次、何时恢复，不再只看到 GitHub
+  那句 `API rate limit exceeded`；成功返回保持整洁。
 - **0.1.1**：`github_api` 支持 URL 查询串（分页 / 筛选 / 搜索 / `?ref=`）；非 2xx 响应
   附带端点所需 scope 与当前令牌 scope；面板显示 GitHub 实际授权的 scopes
   （`X-OAuth-Scopes` + 校验时间），fine-grained PAT 显示「未知」而不是空白。
