@@ -16,7 +16,8 @@
     `github.com/login/device` → 输入验证码 → 自动轮询直到授权完成；
   - 粘贴 Personal Access Token（建议 fine-grained PAT）。
 - **AI 侧 `github_api` 工具**：连接后，AI 可对 `api.github.com` 发 REST 请求，
-  并自动附带 system prompt 引导。
+  路径可直接带查询串（如 `?per_page=100&state=open`）——分页、筛选、搜索、
+  `?ref=<分支>` 读文件都可用；失败时回报端点所需的 scope。自动附带 system prompt 引导。
 - **本地令牌存储**：`.github-auth.json`（已 gitignore），随时可一键断开。
 - 零构建、零运行时框架：host 半是纯 ESM，client 半是纯 `__ModuleLoader__` 模块。
 
@@ -116,13 +117,17 @@ dsh plugin --profile web remove dsh-github-connect
 
 ## 安全说明
 
-- 令牌只保存在本机 `E:\dsh\dsh_my_plugin\.github-auth.json`，除直接发送到
+- 令牌只保存在本机（默认是插件目录内的 `.github-auth.json`；推荐用行配置 `authFile`
+  或环境变量 `DSH_GITHUB_AUTH_FILE` 指到插件目录之外，重装插件不会丢），除直接发送到
   `api.github.com` 外不经过任何其他服务器；请勿分享该文件或提交到 git（已 gitignore）。
 - 本插件不会向任何第三方上传数据，client↔host 走本机同源路由（带 Origin 校验）。
 - 断开连接仅删除本地令牌文件；为保险起见也可在 GitHub 的
   Settings → Applications / Tokens 里直接 revoke。
 - PAT 请用最小权限（fine-grained）；OAuth 设备流的 scopes 默认
   `repo gist read:org workflow`，可在面板中修改。
+- 面板里的权限标签读自 GitHub 返回的 `X-OAuth-Scopes`（每次验证自动刷新）；
+  fine-grained PAT / GitHub App 令牌不由 GitHub 回报权限，面板会显示「未知」提示，
+  请到 GitHub 设置页核对——不显示不等于没有权限。
 
 ## 目录结构
 
@@ -153,3 +158,11 @@ dsh_my_plugin/
     章节手动配置 `proxy`。
 - **改代码后如何生效？** 改 client 代码刷新页面即可；改 host（lib/index.js、
   lib/net.js）代码需要重启 `dsh web`（client 入口由 host 启动时扫描，无需前端构建）。
+
+## 变更记录（fork 分支 `fix-ov23-client-id`）
+
+- **0.1.1**：`github_api` 支持 URL 查询串（分页 / 筛选 / 搜索 / `?ref=`）；非 2xx 响应
+  附带端点所需 scope 与当前令牌 scope；面板显示 GitHub 实际授权的 scopes
+  （`X-OAuth-Scopes` + 校验时间），fine-grained PAT 显示「未知」而不是空白。
+- **0.1.0**（fork 分支前三个提交）：`Ov23li` 新格式 Client ID 正则、核心包改可选
+  `peerDependencies`、凭据文件可配置到插件目录之外（`authFile` / 环境变量）。

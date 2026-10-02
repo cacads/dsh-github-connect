@@ -30,7 +30,9 @@
 ## 使用与排障
 
 - 连接流程：点左下角 GitHub 按钮 → 设备流（需用户自己的 OAuth App Client ID）或粘贴 fine-grained PAT。
-- 连接后 AI 用 `github_api` 工具（method/path/body 调 `api.github.com`）替用户操作 GitHub；
+- 连接后 AI 用 `github_api` 工具（method/path/body 调 `api.github.com`）替用户操作 GitHub，
+  路径可直接带查询串（`?per_page=100&state=open`、`?ref=<分支>`）；分页/筛选/搜索靠它，
+  不要因为拿不到第二页就放弃；
   若返回「GitHub 未连接 / 401」，提示用户先点按钮授权，不要重试。
 - 报错定位：`Bad credentials` = 令牌无效；`UNABLE_TO_VERIFY_LEAF_SIGNATURE` 等网络类错误 =
   代理/证书问题，先看 `lib/net.js` 的自动代理逻辑，仍失败再让用户按 README 配置 `proxy`。

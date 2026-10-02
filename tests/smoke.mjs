@@ -7,7 +7,7 @@
  * portable network layer (proxy resolution / NO_PROXY / CA / dispatcher).
  */
 import assert from 'node:assert/strict'
-import { apply, name } from '../lib/index.js'
+import { apply, isAllowedApiPath, name, parseScopeHeader } from '../lib/index.js'
 import {
   bypassesProxy,
   dispatcherFor,
@@ -58,6 +58,31 @@ assert.ok(tool, 'github_api registered')
 assert.equal(tool.name, 'github_api')
 assert.ok(sections.some((entry) => entry.name === 'tool:github_api'), 'prompt section registered')
 console.log('PASS  agent plane: github_api tool + prompt section registered')
+
+{
+  // The tool must accept query strings (paging / filtering / search / ?ref=)
+  // while still rejecting fragments, whitespace and host-relative paths.
+  assert.equal(isAllowedApiPath('/user'), true)
+  assert.equal(isAllowedApiPath('/repos/o/r/issues?state=open&per_page=100'), true)
+  assert.equal(isAllowedApiPath('/search/issues?q=repo:o/r'), true)
+  assert.equal(isAllowedApiPath('/repos/o/r/contents/a.json?ref=feature/x'), true)
+  assert.equal(isAllowedApiPath('/gists#frag'), false)
+  assert.equal(isAllowedApiPath('/gists?per_page=1 2'), false)
+  assert.equal(isAllowedApiPath('user'), false)
+  assert.equal(isAllowedApiPath(''), false)
+  console.log('PASS  api path guard: query strings allowed, fragments/whitespace rejected')
+}
+
+{
+  // X-OAuth-Scopes parsing: null = GitHub reported nothing (fine-grained PAT /
+  // GitHub App token), [] = reported and empty.
+  assert.deepEqual(parseScopeHeader('repo, gist ,,workflow'), ['repo', 'gist', 'workflow'])
+  assert.deepEqual(parseScopeHeader('repo repo'), ['repo'])
+  assert.deepEqual(parseScopeHeader(''), [])
+  assert.equal(parseScopeHeader(null), null)
+  assert.equal(parseScopeHeader(undefined), null)
+  console.log('PASS  scope header parsing: known / empty / unknown')
+}
 
 class FakeResponse {
   constructor() {
@@ -213,6 +238,16 @@ if (!initiallyConnected) {
   console.log('PASS  github_api without a token -> structured 401')
 } else {
   console.log('SKIP  github_api no-token path (a connection is live)')
+}
+
+if (initiallyConnected) {
+  // End to end: a query string now reaches api.github.com instead of being
+  // rejected by the path guard (HTTP 0 = offline, still proves the guard).
+  const result = await tool.execute({ method: 'GET', path: '/gists?per_page=1' }, {})
+  assert.notEqual(result.status, 400, 'query string rejected: ' + String(result.error ?? ''))
+  console.log('PASS  github_api accepts a query string (HTTP ' + result.status + ')')
+} else {
+  console.log('SKIP  github_api query-string round trip (not connected)')
 }
 
 if (!initiallyConnected) {
