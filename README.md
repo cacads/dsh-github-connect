@@ -18,7 +18,9 @@
 - **打开即校验**：按钮与面板打开时用真实令牌向 GitHub 校验一次，失效自动清除、
   显示「最近验证」时间；网络异常时保留令牌不误登出。
 - **AI 侧 `github_api` 工具**：连接后，AI 可对 `api.github.com` 发 REST 请求，
-  并自动附带 system prompt 引导。
+- **AI 侧 `github_api` 工具**：连接后，AI 可对 `api.github.com` 发 REST 请求，
+  路径可直接带查询串（如 `?per_page=100&state=open`）——分页、筛选、搜索、
+  `?ref=<分支>` 读文件都可用；失败时回报端点所需的 scope。自动附带 system prompt 引导。
 - **凭据存于 DSH home**：`$DSH_HOME/.dsh-github-connect/auth.json`（不在插件目录里，
   所以插件更新不会丢失连接；同一 DSH home 下的所有 profile 共用一份连接）。
 - **适配命令行版与官方桌面版**：host 半不依赖任何 `@deepseek-ai/*` 官方包的运行时导入，
@@ -157,6 +159,9 @@ dsh plugin --profile web remove dsh-github-connect
   Settings → Applications / Tokens 里直接 revoke。
 - PAT 请用最小权限（fine-grained）；OAuth 设备流的 scopes 默认
   `repo gist read:org workflow`，可在面板中修改。
+- 面板里的权限标签读自 GitHub 返回的 `X-OAuth-Scopes`（每次验证自动刷新）；
+  fine-grained PAT / GitHub App 令牌不由 GitHub 回报权限，面板会显示「未知」提示，
+  请到 GitHub 设置页核对——不显示不等于没有权限。
 
 ## 目录结构
 
@@ -191,3 +196,14 @@ dsh_my_plugin/
   因此不会被版本闸门拦下。装完必须**完全退出并重新打开应用**才会加载。
 - **改了代码怎么生效？** 改 client 代码刷新页面即可；改 host（lib/index.js、
   lib/net.js）代码需要重启宿主：命令行版重启 `dsh web`，桌面版退出并重新打开应用。
+
+## 变更记录（fork 分支 `fix-ov23-client-id`）
+
+- **fork 分支基线上游 0.2.0**（2026-10-11 rebase）：本分支只保留上游仍未合并的一项
+  补丁 —— **`Ov23li` 新格式 Client ID 正则**；其余四项（`dsh-tools` 改 peer、凭据移出
+  插件目录、`github_api` 查询串、面板 scope 回显）上游 0.2.0 已自行实现，不再重复。
+- **0.1.1**：`github_api` 支持 URL 查询串（分页 / 筛选 / 搜索 / `?ref=`）；非 2xx 响应
+  附带端点所需 scope 与当前令牌 scope；面板显示 GitHub 实际授权的 scopes
+  （`X-OAuth-Scopes` + 校验时间），fine-grained PAT 显示「未知」而不是空白。
+- **0.1.0**（fork 分支前三个提交）：`Ov23li` 新格式 Client ID 正则、核心包改可选
+  `peerDependencies`、凭据文件可配置到插件目录之外（`authFile` / 环境变量）。
