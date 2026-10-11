@@ -169,7 +169,9 @@ const initiallyConnected = (await call('GET', '/dsh-github/status')).json.connec
     assert.equal(typeof json.lastVerifiedAt, 'string')
     console.log('PASS  POST /dsh-github/verify -> re-validated, lastVerifiedAt=' + json.lastVerifiedAt)
   } else {
-    assert.equal(typeof json.lastVerifiedAt, 'string')
+    // Not connected: the route answers `{ connected: false, lastVerifiedAt: null }`,
+    // so there is no timestamp to assert on.
+    assert.equal(json.lastVerifiedAt, null)
     console.log('PASS  POST /dsh-github/verify -> not connected (lastVerifiedAt=' + json.lastVerifiedAt + ')')
   }
 }
