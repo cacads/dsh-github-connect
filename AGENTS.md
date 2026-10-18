@@ -32,8 +32,8 @@ profile 推断，desktop 优先），并打印对应重启方式。
    运行时会解析失败。工具定义请手写 cordis `ToolDefinition`（JSON Schema + `execute`），
    见 `lib/index.js` 的 `createGithubTool()`。
 2. **peer 只声明 `@deepseek-ai/cordis`**。桌面版有**版本兼容闸门**（`pluginManager` 的
-   `incompatible-version`）：peer 范围必须覆盖运行时的实际版本（当前桌面版 = dsh 0.2.0-rc.2，
-   cordis ~4.0.4）。要放宽范围时，按官方约定给每个 major.minor.patch 元组加带预发布标签的
+   `incompatible-version`）：peer 范围必须覆盖运行时的实际版本（当前桌面版 = dsh 0.2.1-rc.2，
+   cordis ~4.0.5）。要放宽范围时，按官方约定给每个 major.minor.patch 元组加带预发布标签的
    `||` 分支，否则预发布版本会被静默排除。
 3. **凭据不要放在包目录内**：插件更新时 pnpm 会整体替换包目录，放在里面的令牌会被删掉。
    现在存 `$DSH_HOME/.dsh-github-connect/auth.json`（同 home 的多个 profile 共用一份连接），
