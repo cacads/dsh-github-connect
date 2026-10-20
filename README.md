@@ -198,6 +198,10 @@ dsh_my_plugin/
   lib/net.js）代码需要重启宿主：命令行版重启 `dsh web`，桌面版退出并重新打开应用。
 
 ## 变更记录（fork 分支 `fix-ov23-client-id`）
+- **未发布（2026-10-21 工作副本，未 commit / 未推送 / 未重装）**：github_api 的路径校验由「URL-safe 字符白名单」
+  改为**结构化校验**——/search/* 的 q 里的空格、引号、`+`、`|`、括号与中文不再被判成「非法 API 路径」，
+  由 URL 解析器统一编码；# 与控制字符仍然拒绝，合成后的 URL 仍会复核宿主必须为 pi.github.com。
+  工具描述与 system prompt 补上 /search/{repositories,code,issues,commits,users,topics} 的用法。
 
 - **fork 分支基线上游 0.2.0**（2026-10-11 rebase）：本分支只保留上游仍未合并的两项
   能力 —— **`Ov23li` 新格式 Client ID 正则**、**`github_api` 查询串 + 失败配额快照**；

@@ -66,9 +66,20 @@ console.log('PASS  agent plane: github_api tool + prompt section registered')
   assert.equal(isAllowedApiPath('/repos/o/r/issues?state=open&per_page=100'), true)
   assert.equal(isAllowedApiPath('/search/issues?q=repo:o/r'), true)
   assert.equal(isAllowedApiPath('/repos/o/r/contents/a.json?ref=feature/x'), true)
+  // Search queries are free text: `+`, quotes, parentheses, `|` and non-ASCII
+  // must pass; the URL parser percent-encodes them on the way out.
+  assert.equal(isAllowedApiPath('/search/repositories?q=dsh plugin'), true)
+  assert.equal(isAllowedApiPath('/search/repositories?q=汉字 搜索&per_page=5'), true)
+  assert.equal(isAllowedApiPath('/search/code?q="exact phrase" language:ts'), true)
+  assert.equal(isAllowedApiPath('/search/issues?q=repo:o/r+is:open+(label:bug|label:docs)'), true)
   assert.equal(isAllowedApiPath('/gists#frag'), false)
-  assert.equal(isAllowedApiPath('/gists?per_page=1 2'), false)
+  // A space is legal inside the query (the URL parser turns it into %20), so
+  // free-text `q` values work; in the path segment it stays rejected.
+  assert.equal(isAllowedApiPath('/gists?per_page=1 2'), true)
+  assert.equal(isAllowedApiPath('/gists/a b'), false)
+  assert.equal(isAllowedApiPath('/search/repositories?q=a\tb'), false)
   assert.equal(isAllowedApiPath('user'), false)
+  assert.equal(isAllowedApiPath('//evil.example/user'), true) // stays a path on api.github.com
   assert.equal(isAllowedApiPath(''), false)
   console.log('PASS  api path guard: query strings allowed, fragments/whitespace rejected')
 }
